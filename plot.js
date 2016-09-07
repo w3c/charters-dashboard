@@ -9,20 +9,19 @@ function duration(d1, d2) {
 var margin = {top: 30, right: 50, bottom: 30, left: 50},
     width = 800 - margin.left - margin.right,
     height = 600 - margin.top - margin.bottom;
-var dateFormat = d3.time.format("%Y-%m-%d") ;
-var parseDate = dateFormat.parse;
+var dateFormat = d3.timeFormat("%Y-%m-%d") ;
+var parseDate = d3.timeParse("%Y-%m-%d");
 
 // Set the ranges
-var x = d3.time.scale().range([0, width]);
-var y = d3.scale.linear().range([height, 0]);
+var x = d3.scaleTime().range([0, width]);
+var y = d3.scaleLinear().range([height, 0]);
 
 // Define the axes
-var xAxis = d3.svg.axis().scale(x)
-    .orient("bottom").ticks(17);
+var xAxis = d3.axisBottom(x).ticks(17);
 
 // setup fill color
 var cValue = function(d) { return d.repeat;},
-    color = d3.scale.linear().domain([-1, 0, 1,6]).range(["#0F0", "white",  "yellow","red", ]);
+    color = d3.scaleLinear().domain([-1, 0, 1,6]).range(["#0F0", "white",  "yellow","red", ]);
 
 // Adds the svg canvas
 var svg = d3.select("body")
@@ -73,11 +72,6 @@ requirejs(['w3capi'], function(w3capi) {
                                              });
                         baseDate = e.end;
                     });
-                    charter.periods.push({start: parseDate(baseDate),
-                                          end: null,
-                                          duration: 0,
-                                          repeat: 0.5
-                                         });
                     groups[gid].charters.push(charter);
                 });
                 notdone --;
@@ -89,7 +83,16 @@ requirejs(['w3capi'], function(w3capi) {
     });
 
     function dataGathered(groups) {
-        var zoom = d3.behavior.zoom()
+
+        var groupHistory = d3.values(groups).map(g => (g.charters.map(c => c.periods)));
+        var groupHeight = height / (Object.keys(groups).length + 1);
+        var flatHistory = groupHistory.reduce((a,b) => a.concat(b), []).reduce((a,b) => a.concat(b), []);
+        var now = new Date();
+        var defaultExtent = [new Date().setMonth(now.getMonth() - 24), new Date().setMonth(now.getMonth() + 6)];
+        x.domain(defaultExtent).nice();
+        var zoom = d3.zoom()
+            .translateExtent([[x(parseDate("1994-01-01")),0],[x(d3.max(flatHistory, d => d.end)) + 400 + margin.right,height]])
+            .scaleExtent([.1,5])
             .on("zoom", draw);
         svg.append("rect")
             .attr("class", "pane")
@@ -98,10 +101,6 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("height", height)
             .call(zoom);
 
-        var groupHistory = d3.values(groups).map(g => (g.charters.map(c => c.periods)));
-        var groupHeight = height / (Object.keys(groups).length + 1);
-        var flatHistory = groupHistory.reduce((a,b) => a.concat(b), []).reduce((a,b) => a.concat(b), []);
-        x.domain(d3.extent(flatHistory, function(d) { return Math.max(new Date().setMonth(new Date().getMonth() - 24), d.start); })).nice();
         var groupEnter = svg.selectAll("g.group").data(d3.values(groups))
             .enter();
 
@@ -115,7 +114,7 @@ requirejs(['w3capi'], function(w3capi) {
             .insert("foreignObject")
             .attr("width", 350)
             .attr("height", 400)
-            .attr("x", 700)
+            .attr("x", width + margin.right)
             .attr("y", 170)
             .append("xhtml:div").attr('class','grouppane');
 
@@ -152,6 +151,7 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("y", function(d)  { return Object.keys(groups).indexOf(d3.select(this.parentNode.parentNode.parentNode).datum().id) * groupHeight;})
             .attr("height", groupHeight)
             .style("fill", d => color(cValue(d)))
+            .call(zoom)
             .append("title").text(function(d) { return (d.duration === 0 ? "End of charter for " + d.name + " scheduled on " + dateFormat(d.start) : (d.repeat > 0 ? "Extension #" +  d.repeat   : "New charter") + " for " + d3.select(this.parentNode.parentNode.parentNode.parentNode).datum().name + " of " + d.duration + " months"  + " on " + dateFormat(d.start))});
 
         groupEls
@@ -159,7 +159,7 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("xlink:href", (d,i) => "#g" + Object.keys(groups)[i])
             .append("text")
             .attr("text-anchor", "end")
-            .attr("fill", "#333")
+            .attr("class", d => { var end = lastOf(lastOf(d.charters).periods).end ; return end < new Date() ? "outofcharter" : (end < new Date().setMonth(new Date().getMonth() + 3) ? "soonooc" : undefined)} )
             .attr("y", (d,i) => i*groupHeight + 12)
             .text((d,i) => d.name.replace("Working Group", ""));
 
@@ -215,7 +215,7 @@ requirejs(['w3capi'], function(w3capi) {
             .append('g')
             .attr('class', 'legend')
             .attr('transform', function(d, i) {
-                var x = width + margin.right;
+                var x = width + margin.right + 10;
                 var y = i * legendRectSize;
                 return 'translate(' + x + ',' + y + ')';
             });
@@ -224,7 +224,7 @@ requirejs(['w3capi'], function(w3capi) {
             .append('foreignObject')
             .attr("width", 320)
             .attr("height", 30)
-            .attr("x", width + margin.right)
+            .attr("x", width + margin.right + 10)
             .attr("y", 9*legendRectSize)
             .append('xhtml:select')
             .attr('id', 'groupSelector')
@@ -269,34 +269,35 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")");
 
-
-        zoom.x(x);
         draw();
         function draw() {
+            var transform = d3.event ? d3.event.transform : d3.zoomIdentity;
+            var xNewScale = transform.rescaleX(x);
+            xAxis.scale(xNewScale)
+            svg.select("g.x.axis").call(xAxis);
             var now = new Date();
             var months3 = new Date().setMonth(now.getMonth() + 3);
-            svg.select("g.x.axis").call(xAxis);
             svg.selectAll("line.policy")
-                .attr("x1", x(parseDate("2015-06-18")))
-                .attr("x2", x(parseDate("2015-06-18")));
+                .attr("x1", xNewScale(parseDate("2015-06-18")))
+                .attr("x2", xNewScale(parseDate("2015-06-18")));
             svg.selectAll("text.policy")
-                .attr("x", x(parseDate("2015-06-18")));
+                .attr("x", xNewScale(parseDate("2015-06-18")));
             svg.selectAll("line.today")
-                .attr("x1", x(now))
-                .attr("x2", x(now));
+                .attr("x1", xNewScale(now))
+                .attr("x2", xNewScale(now));
             svg.selectAll("text.today")
-                .attr("x", x(now));
+                .attr("x", xNewScale(now));
             svg.selectAll("line.months3")
-                .attr("x1", x(months3))
-                .attr("x2", x(months3));
+                .attr("x1", xNewScale(months3))
+                .attr("x2", xNewScale(months3));
             svg.selectAll("text.months3")
-                .attr("x", x(months3));
+                .attr("x", xNewScale(months3));
             svg.selectAll("g.group").selectAll("rect")
-                .attr("x", d => x(d.start))
-                .attr("width", d => Math.max(0, x(d.end) - x(d.start)))
+                .attr("x", d => xNewScale(d.start))
+                .attr("width", d => Math.max(0, Math.min(width - xNewScale(d.start),xNewScale(d.end) - xNewScale(d.start))))
             svg.selectAll("g.group").selectAll("text")
-                .attr("x", d => Math.max(x(d.charters[0].periods[0].start) - 3, 0 - margin.left ))
-                .attr("text-anchor", d => x(d.charters[0].periods[0].start) - 3 > 0 - margin.left ? "end" : "start")
+                .attr("x", d => Math.max(xNewScale(d.charters[0].periods[0].start) - 3, 0 - margin.left ))
+                .attr("text-anchor", d => xNewScale(d.charters[0].periods[0].start) - 3 > 0 - margin.left ? "end" : "start")
 
         }
         updateView();
