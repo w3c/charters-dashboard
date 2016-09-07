@@ -1,0 +1,58 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Dashboard of W3C Working Group Charters</title>
+<style> /* set the CSS */
+ text { text-shadow: 1px 1px 0px #555}
+body { font: 12px Arial;}
+
+  foreignObject div {
+  max-width: 350px;
+  max-height: 400px;
+  overflow-y: auto;
+  color: white;
+  }
+
+  foreignObject a:visited, foreignObject a:link {
+color:white;
+  }
+  
+rect.pane { pointer-events: all;}
+  
+text { fill: white;}
+.axis path,
+.axis line {
+    fill: none;
+    stroke:white;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+
+  .group {
+  }
+
+  .group:hover rect {
+    stroke: #ddd;
+  stroke-width: 3;
+  stroke-dasharray: 1 0;
+  }
+
+ .group:target rect, .group:focus rect {
+  stroke-width: 3;
+  stroke: #55d;
+  stroke-dasharray: 1 0;
+  }
+
+
+  .group foreignObject {
+    display:none;
+  }
+
+  .group:target foreignObject, .group:focus foreignObject {
+    display:block;
+  }
+
+</style>
+<h1>Dashboard of W3C Working Group Charters</h1>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.1/require.min.js" data-main="plot.js"></script>
+
