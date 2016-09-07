@@ -113,29 +113,29 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("class", "group");
         groupEls
             .insert("foreignObject")
-            .attr("width", 350)
+            .attr("width", 340)
             .attr("height", 400)
-            .attr("x", width + margin.right)
+            .attr("x", width + 10)
             .attr("y", 170)
             .append("xhtml:div").attr('class','grouppane');
 
 
         svg.selectAll("g.group").selectAll("div.grouppane").selectAll("div.charter")
-            .data(d => d.charters)
+            .data(d => d.charters.slice().reverse())
             .enter()
             .append("div")
             .attr("class","charter")
             .append("p")
             .append("a")
             .attr("href", d => d.uri)
-            .text((d,i) => "#" + (i + 1) + " charter");
+            .text((d,i,a ) => "#" + (a.length - i) + " charter");
         svg.selectAll("div.charter")
             .append("ul").selectAll("li")
             .data(d=>d.periods)
             .enter()
             .append("li")
             .append("a").attr("href", d => d.cfp ? d.cfp : undefined)
-            .text(d => d.duration ? (d.repeat <= 0 ? "chartered on " : "extended on ") + dateFormat(d.start) + " for " + d.duration + " months" : "ending on " + dateFormat(d.start));
+            .text((d,i,a) => (d.repeat <= 0 ? "chartered on " : "extended on ") + dateFormat(d.start) + " for " + d.duration + " months " + (i == a.length - 1 ? " ending on " + dateFormat(d.end) : ""));
 
         svg.selectAll("g.group").selectAll("g.charter")
             .data(d => d.charters)
@@ -272,6 +272,7 @@ requirejs(['w3capi'], function(w3capi) {
 
         draw();
         function draw() {
+            var clip = x => Math.min(x, width);
             var transform = d3.event ? d3.event.transform : d3.zoomIdentity;
             var xNewScale = transform.rescaleX(x);
             xAxis.scale(xNewScale)
@@ -297,7 +298,7 @@ requirejs(['w3capi'], function(w3capi) {
                 .attr("x", d => xNewScale(d.start))
                 .attr("width", d => Math.max(0, Math.min(width - xNewScale(d.start),xNewScale(d.end) - xNewScale(d.start))))
             svg.selectAll("g.group").selectAll("text")
-                .attr("x", d => d.name.replace("Working Group", "").length *4< xNewScale(d.charters[0].periods[0].start) - 3 ? xNewScale(d.charters[0].periods[0].start) - 3 : 0 - margin.left )
+                .attr("x", d => clip(d.name.replace("Working Group", "").length *4< xNewScale(d.charters[0].periods[0].start) - 3 ? xNewScale(d.charters[0].periods[0].start) - 3 : 0 - margin.left) )
             .attr("text-anchor", d => d.name.replace("Working Group", "").length *4 < xNewScale(d.charters[0].periods[0].start) - 3 ? "end" : "start")
 
         }
