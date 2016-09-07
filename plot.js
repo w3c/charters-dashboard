@@ -242,10 +242,14 @@ requirejs(['w3capi'], function(w3capi) {
             .addEventListener('change', function(e) {
                 location.hash = '#g' + this.options[this.selectedIndex].value;
             });
-        window.addEventListener("hashchange", function(e) {
+        window.addEventListener("hashchange", updateView);
+        function updateView() {
             document.querySelector("option[value='" + location.hash.slice(2) +"']")
                 .selected = true;
-        });
+            // needed because Chrome doesn't implement :target correctly?
+            d3.selectAll("foreignObject[style]").attr("style", undefined);
+            d3.select(document.querySelector("#" + location.hash.slice(1) + " foreignObject")).style("display", "block");
+        };
         
         legend.append('circle')
             .attr('r', radius)
@@ -293,6 +297,7 @@ requirejs(['w3capi'], function(w3capi) {
                 .attr("text-anchor", d => x(d.charters[0].periods[0].start) - 3 > 0 - margin.left ? "end" : "start")
 
         }
+        updateView();
     }
 });
 
