@@ -169,7 +169,9 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("y2", -5)
             .style("stroke-width", 2)
             .style("stroke", "#FAA");
-        svg.append("text")
+        svg.append("a")
+            .attr("xlink:href", "https://www.w3.org/2015/04/charter-extensions.html")
+            .append("text")
             .attr("class", "policy")
             .attr("y", -5)
             .attr("text-anchor", "end")
