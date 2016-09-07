@@ -85,6 +85,7 @@ requirejs(['w3capi'], function(w3capi) {
     function dataGathered(groups) {
 
         var groupHistory = d3.values(groups).map(g => (g.charters.map(c => c.periods)));
+        var sortedGroupIds = d3.keys(groups).sort((a,b) => lastOf(lastOf(groups[a].charters).periods).end - lastOf(lastOf(groups[b].charters).periods).end);
         var groupHeight = height / (Object.keys(groups).length + 1);
         var flatHistory = groupHistory.reduce((a,b) => a.concat(b), []).reduce((a,b) => a.concat(b), []);
         var now = new Date();
@@ -148,11 +149,11 @@ requirejs(['w3capi'], function(w3capi) {
             .data(d => d.periods)
             .enter()
             .append("rect")
-            .attr("y", function(d)  { return Object.keys(groups).indexOf(d3.select(this.parentNode.parentNode.parentNode).datum().id) * groupHeight;})
+            .attr("y", function(d)  { return sortedGroupIds.indexOf(d3.select(this.parentNode.parentNode.parentNode).datum().id) * groupHeight;})
             .attr("height", groupHeight)
             .style("fill", d => color(cValue(d)))
             .call(zoom)
-            .append("title").text(function(d) { return (d.duration === 0 ? "End of charter for " + d.name + " scheduled on " + dateFormat(d.start) : (d.repeat > 0 ? "Extension #" +  d.repeat   : "New charter") + " for " + d3.select(this.parentNode.parentNode.parentNode.parentNode).datum().name + " of " + d.duration + " months"  + " on " + dateFormat(d.start))});
+            .append("title").text(function(d) { return (d.repeat > 0 ? "Extension #" +  d.repeat   : "New charter") + " for " + d3.select(this.parentNode.parentNode.parentNode.parentNode).datum().name + " of " + d.duration + " months"  + " on " + dateFormat(d.start) + " ending on " + dateFormat(d.end)});
 
         groupEls
             .append("a")
@@ -160,7 +161,7 @@ requirejs(['w3capi'], function(w3capi) {
             .append("text")
             .attr("text-anchor", "end")
             .attr("class", d => { var end = lastOf(lastOf(d.charters).periods).end ; return end < new Date() ? "outofcharter" : (end < new Date().setMonth(new Date().getMonth() + 3) ? "soonooc" : undefined)} )
-            .attr("y", (d,i) => i*groupHeight + 12)
+            .attr("y", d => sortedGroupIds.indexOf(d.id)*groupHeight + 12)
             .text((d,i) => d.name.replace("Working Group", ""));
 
         svg.append("line")
@@ -296,8 +297,8 @@ requirejs(['w3capi'], function(w3capi) {
                 .attr("x", d => xNewScale(d.start))
                 .attr("width", d => Math.max(0, Math.min(width - xNewScale(d.start),xNewScale(d.end) - xNewScale(d.start))))
             svg.selectAll("g.group").selectAll("text")
-                .attr("x", d => Math.max(xNewScale(d.charters[0].periods[0].start) - 3, 0 - margin.left ))
-                .attr("text-anchor", d => xNewScale(d.charters[0].periods[0].start) - 3 > 0 - margin.left ? "end" : "start")
+                .attr("x", d => d.name.replace("Working Group", "").length *4< xNewScale(d.charters[0].periods[0].start) - 3 ? xNewScale(d.charters[0].periods[0].start) - 3 : 0 - margin.left )
+            .attr("text-anchor", d => d.name.replace("Working Group", "").length *4 < xNewScale(d.charters[0].periods[0].start) - 3 ? "end" : "start")
 
         }
         updateView();
