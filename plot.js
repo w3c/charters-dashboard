@@ -230,7 +230,7 @@ requirejs(['w3capi'], function(w3capi) {
         ;
         d3.select('select')
             .selectAll("option.group")
-            .data(d3.values(groups))
+            .data(d3.values(groups).sort((a,b) => a.name < b.name ? -1 : 1))
             .enter()
             .append("option")
             .attr("class","group")
