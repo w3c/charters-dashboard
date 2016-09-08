@@ -137,7 +137,7 @@ requirejs(['w3capi'], function(w3capi) {
             .enter()
             .append("li")
             .append("a").attr("href", d => d.cfp ? d.cfp : undefined)
-            .text((d,i,a) => (d.repeat <= 0 ? "chartered on " : "extended on ") + dateFormat(d.start) + " for " + d.duration + " months " + (i == a.length - 1 ? " ending on " + dateFormat(d.end) : ""));
+            .text((d,i,a) => (d.repeat <= 0 ? "chartered on " : "extended on ") + dateFormat(d.start) + " for " + d.duration + " month" + (d.duration > 1 ? "s" : "") + " " + (i == a.length - 1 ? " ending on " + dateFormat(d.end) : ""));
 
         svg.selectAll("g.group").selectAll("g.charter")
             .data(d => d.charters)
