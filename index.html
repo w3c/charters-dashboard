@@ -16,8 +16,8 @@ body { font: 12px Arial;}
 color:white;
   }
   
-rect.pane { pointer-events: all;}
-  
+rect.pane { pointer-events: all; cursor: grab;}
+rect.pane:active {cursor: grabbing;}  
   text { fill: white;}
   text.outofcharter { fill: red;}
   text.soonooc { fill: pink;}
@@ -26,7 +26,7 @@ rect.pane { pointer-events: all;}
     fill: none;
     stroke:white;
     stroke-width: 1;
-    shape-rendering: crispEdges;
+  shape-rendering: crispEdges;
   }
 
   .group {

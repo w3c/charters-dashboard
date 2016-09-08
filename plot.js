@@ -98,8 +98,10 @@ requirejs(['w3capi'], function(w3capi) {
         svg.append("rect")
             .attr("class", "pane")
             .attr("fill", "none")
-            .attr("width", width)
-            .attr("height", height)
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.bottom + margin.top)
+            .attr("y", -margin.top)
+            .attr("x", -margin.left)
             .call(zoom);
 
         var groupEnter = svg.selectAll("g.group").data(d3.values(groups))
