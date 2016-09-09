@@ -21,7 +21,7 @@ var xAxis = d3.axisBottom(x).ticks(17);
 
 // setup fill color
 var cValue = function(d) { return d.repeat;},
-    color = d3.scaleLinear().domain([-1, 0, 1,6]).range(["#0F0", "white",  "yellow","red", ]);
+    color = d3.scaleLinear().domain([-1, 0, 1,6]).range(["#CFC", "white",  "yellow","red", ]);
 
 // Adds the svg canvas
 var svg = d3.select("body")
