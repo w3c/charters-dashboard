@@ -33,6 +33,21 @@ var svg = d3.select("body")
     .attr("transform", 
           "translate(" + margin.left + "," + margin.top + ")");
 
+// filter for background color on text
+var filter = d3.select("svg")
+    .append("defs")
+    .append("filter")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", 1)
+    .attr("height", 1)
+    .attr("id", "solid");
+filter.append("feFlood")
+    .attr("flood-color", "black")
+    .attr("flood-opacity", "0.8");
+filter.append("feComposite")
+    .attr("in", "SourceGraphic");
+
 var radius = 4;
 
 requirejs.config({
@@ -162,6 +177,7 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("xlink:href", (d,i) => "#g" + Object.keys(groups)[i])
             .append("text")
             .attr("text-anchor", "end")
+            .attr("filter", "url(#solid")
             .attr("class", d => { var end = lastOf(lastOf(d.charters).periods).end ; return end < new Date() ? "outofcharter" : (end < new Date().setMonth(new Date().getMonth() + 3) ? "soonooc" : undefined)} )
             .attr("y", d => sortedGroupIds.indexOf(d.id)*groupHeight + 12)
             .text((d,i) => d.name.replace("Working Group", ""));
