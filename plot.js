@@ -8,7 +8,7 @@ function duration(d1, d2) {
 
 var margin = {top: 30, right: 50, bottom: 30, left: 50},
     width = 800 - margin.left - margin.right,
-    height = 600 - margin.top - margin.bottom;
+    height = 800 - margin.top - margin.bottom;
 var dateFormat = d3.timeFormat("%Y-%m-%d") ;
 var parseDate = d3.timeParse("%Y-%m-%d");
 
@@ -177,9 +177,10 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("xlink:href", (d,i) => "#g" + Object.keys(groups)[i])
             .append("text")
             .attr("text-anchor", "end")
+            .attr("dominant-baseline", "central")
             .attr("filter", "url(#solid")
             .attr("class", d => { var end = lastOf(lastOf(d.charters).periods).end ; return end < new Date() ? "outofcharter" : (end < new Date().setMonth(new Date().getMonth() + 3) ? "soonooc" : undefined)} )
-            .attr("y", d => sortedGroupIds.indexOf(d.id)*groupHeight + 12)
+            .attr("y", d => sortedGroupIds.indexOf(d.id)*groupHeight + groupHeight / 2)
             .text((d,i) => d.name.replace("Working Group", ""));
 
         svg.append("line")
@@ -318,7 +319,6 @@ requirejs(['w3capi'], function(w3capi) {
             svg.selectAll("g.group").selectAll("text")
                 .attr("x", d => clip(d.name.replace("Working Group", "").length *4< xNewScale(d.charters[0].periods[0].start) - 3 ? xNewScale(d.charters[0].periods[0].start) - 3 : 0 - margin.left) )
             .attr("text-anchor", d => d.name.replace("Working Group", "").length *4 < xNewScale(d.charters[0].periods[0].start) - 3 ? "end" : "start")
-
         }
         updateView();
     }
