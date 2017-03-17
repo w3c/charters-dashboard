@@ -30,8 +30,30 @@ var svg = d3.select("body")
     .attr("height", height + margin.top + margin.bottom)
     .style("background-color", "#333")
     .append("g")
+    .attr("aria-busy", true)
     .attr("transform", 
           "translate(" + margin.left + "," + margin.top + ")");
+
+var summary = d3.select("body")
+    .append("section")
+    .attr("aria-busy", true);
+
+summary.append("h2")
+    .text("Charters needing attention");
+
+summary.append("section")
+    .attr("id", "expired")
+    .append("h3")
+    .text("Groups with expired charters");
+d3.select("#expired")
+    .append("ul");
+
+summary.append("section")
+    .attr("id", "expiring")
+    .append("h3")
+    .text("Groups whose charter expires in less than 3 months");
+d3.select("#expiring")
+    .append("ul");
 
 // filter for background color on text
 var filter = d3.select("svg")
@@ -98,7 +120,6 @@ requirejs(['w3capi'], function(w3capi) {
     });
 
     function dataGathered(groups) {
-
         var groupHistory = d3.values(groups).map(g => (g.charters.map(c => c.periods)));
         var sortedGroupIds = d3.keys(groups).sort((a,b) => lastOf(lastOf(groups[a].charters).periods).end - lastOf(lastOf(groups[b].charters).periods).end);
         var groupHeight = height / (Object.keys(groups).length + 1);
@@ -119,6 +140,33 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("x", -margin.left)
             .call(zoom);
 
+        var latestCharters = d3.values(groups).map(g => { return {id: g.id, name: g.name, charter: lastOf(g.charters), period: lastOf(lastOf(g.charters).periods)};});
+        var expiredCharters = latestCharters.filter(c => c.period.end < now)
+            .sort((a,b) => a.period.end - b.period.end);
+        var expiringCharters = latestCharters.filter(c => c.period.end > now && c.period.end < new Date().setMonth(new Date().getMonth() + 3))
+            .sort((a,b) => a.period.end - b.period.end);
+
+        d3.select("#expired")
+            .select("ul")
+            .selectAll("li")
+            .data(expiredCharters)
+            .enter()
+            .append("li")
+            .append("a")
+            .attr("href", d => d.charter.uri)
+            .text(d => d.name + " expired on " + dateFormat(d.period.end));
+        d3.select("#expiring")
+            .select("ul")
+            .selectAll("li")
+            .data(expiringCharters)
+            .enter()
+            .append("li")
+            .append("a")
+            .attr("href", d => d.charter.uri)
+            .text(d => d.name + " expires on " + dateFormat(d.period.end));
+
+
+
         var groupEnter = svg.selectAll("g.group").data(d3.values(groups))
             .enter();
 
@@ -127,15 +175,22 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("id", d => "g" + d.id)
             .attr("focusable", true)
             .attr("tabIndex", 0)
-            .attr("class", "group");
+            .attr("class", "group")
+            .attr("role", "region")
+            .attr("aria-labelledby", d => "title-" + d.id);
         groupEls
             .insert("foreignObject")
             .attr("width", 340)
             .attr("height", 400)
             .attr("x", width + 10)
             .attr("y", 170)
+            .attr("id", function(d) { return "pane-" + d3.select(this.parentNode).datum().id})
             .append("xhtml:div").attr('class','grouppane');
 
+        groupEls
+            .append("title")
+            .attr("id", d => "title-" + d.id)
+            .text(d => "History of charters for the " + d.name);
 
         svg.selectAll("g.group").selectAll("div.grouppane").selectAll("div.charter")
             .data(d => d.charters.slice().reverse())
@@ -154,12 +209,15 @@ requirejs(['w3capi'], function(w3capi) {
             .append("a").attr("href", d => d.cfp ? d.cfp : undefined)
             .text((d,i,a) => (d.repeat <= 0 ? "chartered on " : "extended on ") + dateFormat(d.start) + " for " + d.duration + " month" + (d.duration > 1 ? "s" : "") + " " + (i == a.length - 1 ? " ending on " + dateFormat(d.end) : ""));
 
-        svg.selectAll("g.group").selectAll("g.charter")
+        var groupLinks = svg.selectAll("g.group")
+            .append("a")
+            .attr("aria-controls", "groupSelector")
+            .attr("xlink:href", function(d)  {return "#g" + d3.select(this.parentNode).datum().id;});
+
+        groupLinks
+            .selectAll("g.charter")
             .data(d => d.charters)
             .enter()
-            .append("a")
-            .attr("xlink:href", function(d)  {return "#g" + d3.select(this.parentNode).datum().id;})
-            .attr("title", function(d)  {return "#g" + d3.select(this.parentNode).datum().name;})
             .append("g")
             .attr("class","charter")
             .selectAll("rect")
@@ -167,14 +225,16 @@ requirejs(['w3capi'], function(w3capi) {
             .enter()
             .append("rect")
             .attr("y", function(d)  { return sortedGroupIds.indexOf(d3.select(this.parentNode.parentNode.parentNode).datum().id) * groupHeight;})
+            .attr("aria-labelledby", function(d) { return "title-" + d3.select(this.parentNode.parentNode.parentNode).datum().id + "-" + d.repeat;})
+            .attr("role", "img")
             .attr("height", groupHeight)
             .style("fill", d => color(cValue(d)))
             .call(zoom)
-            .append("title").text(function(d) { return (d.repeat > 0 ? "Extension #" +  d.repeat   : "New charter") + " for " + d3.select(this.parentNode.parentNode.parentNode.parentNode).datum().name + " of " + d.duration + " months"  + " on " + dateFormat(d.start) + " ending on " + dateFormat(d.end)});
+            .append("title")
+            .attr("id", function(d) { return "title-" + d3.select(this.parentNode.parentNode.parentNode.parentNode).datum().id + "-" + d.repeat;})
+            .text(function(d) { return (d.repeat > 0 ? "Extension #" +  d.repeat   : "New charter") + " for " + d3.select(this.parentNode.parentNode.parentNode.parentNode).datum().name + " of " + d.duration + " months"  + " on " + dateFormat(d.start) + " ending on " + dateFormat(d.end)});
 
-        groupEls
-            .append("a")
-            .attr("xlink:href", (d,i) => "#g" + Object.keys(groups)[i])
+        groupLinks
             .append("text")
             .attr("text-anchor", "end")
             .attr("dominant-baseline", "central")
@@ -256,6 +316,7 @@ requirejs(['w3capi'], function(w3capi) {
             .enter()
             .append("option")
             .attr("class","group")
+            .attr("aria-controls", d => "pane" + d.id)
             .attr("value", d => d.id)
             .property("selected", d => location.hash === '#g' + d.id ? 'selected'  : null)
             .text(d => d.name.replace("Working Group", "WG"));
@@ -318,7 +379,11 @@ requirejs(['w3capi'], function(w3capi) {
                 .attr("width", d => Math.max(0, Math.min(width - xNewScale(d.start),xNewScale(d.end) - xNewScale(d.start))))
             svg.selectAll("g.group").selectAll("text")
                 .attr("x", d => clip(d.name.replace("Working Group", "").length *4< xNewScale(d.charters[0].periods[0].start) - 3 ? xNewScale(d.charters[0].periods[0].start) - 3 : 0 - margin.left) )
-            .attr("text-anchor", d => d.name.replace("Working Group", "").length *4 < xNewScale(d.charters[0].periods[0].start) - 3 ? "end" : "start")
+                .attr("text-anchor", d => d.name.replace("Working Group", "").length *4 < xNewScale(d.charters[0].periods[0].start) - 3 ? "end" : "start")
+
+            svg.attr("aria-busy", false)
+            summary.attr("aria-busy", false)
+
         }
         updateView();
     }
