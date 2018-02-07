@@ -78,6 +78,7 @@ requirejs.config({
     }
 });
 
+const shorten = g => g.name.replace("Working Group", "WG").replace("Interest Group", "IG");
 
 requirejs(['w3capi'], function(w3capi) {
     w3capi.apiKey = 'tqdjj949r5cossgggw0ow8ow4kks44c'; // Your API key.
@@ -85,7 +86,7 @@ requirejs(['w3capi'], function(w3capi) {
     var groups = {};
     var charter = [];
     w3capi.groups().fetch(function(err, data) {
-        var wgs = data.filter(x => x.title.match(/Working Group/));
+        var wgs = data.filter(x => x.title.match(/(Working|Interest) Group/));
         var notdone = wgs.length;
         wgs.forEach(function(g) {
             var gid = lastOf(g.href.split('/'));
@@ -241,7 +242,7 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("filter", "url(#solid")
             .attr("class", d => { var end = lastOf(lastOf(d.charters).periods).end ; return end < new Date() ? "outofcharter" : (end < new Date().setMonth(new Date().getMonth() + 3) ? "soonooc" : undefined)} )
             .attr("y", d => sortedGroupIds.indexOf(d.id)*groupHeight + groupHeight / 2)
-            .text((d,i) => d.name.replace("Working Group", ""));
+            .text(shorten);
 
         svg.append("line")
             .attr("class", "policy")
@@ -319,7 +320,7 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("aria-controls", d => "pane" + d.id)
             .attr("value", d => d.id)
             .property("selected", d => location.hash === '#g' + d.id ? 'selected'  : null)
-            .text(d => d.name.replace("Working Group", "WG"));
+            .text(shorten);
 
         document.getElementById('groupSelector')
             .addEventListener('change', function(e) {
@@ -378,8 +379,8 @@ requirejs(['w3capi'], function(w3capi) {
                 .attr("x", d => xNewScale(d.start))
                 .attr("width", d => Math.max(0, Math.min(width - xNewScale(d.start),xNewScale(d.end) - xNewScale(d.start))))
             svg.selectAll("g.group").selectAll("text")
-                .attr("x", d => clip(d.name.replace("Working Group", "").length *4< xNewScale(d.charters[0].periods[0].start) - 3 ? xNewScale(d.charters[0].periods[0].start) - 3 : 0 - margin.left) )
-                .attr("text-anchor", d => d.name.replace("Working Group", "").length *4 < xNewScale(d.charters[0].periods[0].start) - 3 ? "end" : "start")
+                .attr("x", d => clip(shorten(d).length *4< xNewScale(d.charters[0].periods[0].start) - 3 ? xNewScale(d.charters[0].periods[0].start) - 3 : 0 - margin.left) )
+            .attr("text-anchor", d => shorten(d).length *4 < xNewScale(d.charters[0].periods[0].start) - 3 ? "end" : "start")
 
             svg.attr("aria-busy", false)
             summary.attr("aria-busy", false)
