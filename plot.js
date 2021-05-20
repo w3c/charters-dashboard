@@ -1,5 +1,5 @@
-function lastOf(array) {
-    return array[array.length - 1];
+function lastOf(array, offset = 0) {
+    return array[array.length - 1 - offset];
 }
 
 function duration(d1, d2) {
@@ -89,9 +89,9 @@ requirejs(['w3capi'], function(w3capi) {
         var wgs = data.filter(x => x.title.match(/(Working|Interest) Group/));
         var notdone = wgs.length;
         wgs.forEach(function(g) {
-            var gid = parseInt(lastOf(g.href.split('/'), 10));
-            groups[gid] = {name: g.title, charters:[], id:gid};
-            return w3capi.group(gid).charters().fetch({ embed: true }, function(err, charterlist) {
+            const [type, shortname] = [lastOf(g.href.split('/'), 1), lastOf(g.href.split('/'))];
+            groups[type + '-' + shortname] = {name: g.title, charters:[], shortname, type, id: type + '-' + shortname};
+            return w3capi.group({type, shortname}).charters().fetch({ embed: true }, function(err, charterlist) {
                 charterlist.forEach((c,i) => {
                     var charter = {uri: c.uri, periods : []};
                     charter.periods.push({
@@ -99,7 +99,7 @@ requirejs(['w3capi'], function(w3capi) {
                         end: parseDate(c['initial-end']),
                         duration: duration(c['initial-end'], c.start),
                         cfp: c['cfp-uri'],
-                        repeat: groups[gid].charters.length > 0 ? 0 : -1});
+                        repeat: groups[type + '-' + shortname].charters.length > 0 ? 0 : -1});
                     var baseDate = c['initial-end'];
                     c.extensions.sort((a,b) => new Date(a.end) - new Date(b.end)).forEach((e,i) => {
                         charter.periods.push({start: parseDate(baseDate),
@@ -110,7 +110,7 @@ requirejs(['w3capi'], function(w3capi) {
                                              });
                         baseDate = e.end;
                     });
-                    groups[gid].charters.push(charter);
+                    groups[type + '-' + shortname].charters.push(charter);
                 });
                 notdone --;
                 if (!notdone) {
@@ -141,7 +141,7 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("x", -margin.left)
             .call(zoom);
 
-        var latestCharters = d3.values(groups).map(g => { return {id: g.id, name: g.name, charter: lastOf(g.charters), period: lastOf(lastOf(g.charters).periods)};});
+        var latestCharters = d3.values(groups).map(g => { return {id: g.type + '-' + g.shortname, name: g.name, charter: lastOf(g.charters), period: lastOf(lastOf(g.charters).periods)};});
         var expiredCharters = latestCharters.filter(c => c.period.end < now)
             .sort((a,b) => a.period.end - b.period.end);
         var expiringCharters = latestCharters.filter(c => c.period.end > now && c.period.end < new Date().setMonth(new Date().getMonth() + 3))
