@@ -89,7 +89,7 @@ requirejs(['w3capi'], function(w3capi) {
         var wgs = data.filter(x => x.title.match(/(Working|Interest) Group/));
         var notdone = wgs.length;
         wgs.forEach(function(g) {
-            var gid = parseInt(lastOf(g.href.split('/'), 10);
+            var gid = parseInt(lastOf(g.href.split('/'), 10));
             groups[gid] = {name: g.title, charters:[], id:gid};
             return w3capi.group(gid).charters().fetch({ embed: true }, function(err, charterlist) {
                 charterlist.forEach((c,i) => {
