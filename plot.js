@@ -122,7 +122,7 @@ requirejs(['w3capi'], function(w3capi) {
 
     function dataGathered(groups) {
         var groupHistory = d3.values(groups).map(g => (g.charters.map(c => c.periods)));
-        var sortedGroupIds = d3.keys(groups).sort((a,b) => lastOf(lastOf(groups[a].charters).periods).end - lastOf(lastOf(groups[b].charters).periods).end);
+        var sortedGroupIds = d3.keys(groups).sort((a,b) => lastOf(lastOf(groups[a].charters).periods).end - lastOf(lastOf(groups[b].charters)?.periods).end);
         var groupHeight = height / (Object.keys(groups).length + 1);
         var flatHistory = groupHistory.reduce((a,b) => a.concat(b), []).reduce((a,b) => a.concat(b), []);
         var now = new Date();
@@ -141,7 +141,7 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("x", -margin.left)
             .call(zoom);
 
-        var latestCharters = d3.values(groups).map(g => { return {id: g.type + '-' + g.shortname, name: g.name, charter: lastOf(g.charters), period: lastOf(lastOf(g.charters).periods)};});
+        var latestCharters = d3.values(groups).map(g => { return {id: g.type + '-' + g.shortname, name: g.name, charter: lastOf(g.charters), period: lastOf(lastOf(g.charters)?.periods)};});
         var expiredCharters = latestCharters.filter(c => c.period.end < now)
             .sort((a,b) => a.period.end - b.period.end);
         var expiringCharters = latestCharters.filter(c => c.period.end > now && c.period.end < new Date().setMonth(new Date().getMonth() + 3))
@@ -240,7 +240,7 @@ requirejs(['w3capi'], function(w3capi) {
             .attr("text-anchor", "end")
             .attr("dominant-baseline", "central")
             .attr("filter", "url(#solid")
-            .attr("class", d => { var end = lastOf(lastOf(d.charters).periods).end ; return end < new Date() ? "outofcharter" : (end < new Date().setMonth(new Date().getMonth() + 3) ? "soonooc" : undefined)} )
+            .attr("class", d => { var end = lastOf(lastOf(d.charters)?.periods).end ; return end < new Date() ? "outofcharter" : (end < new Date().setMonth(new Date().getMonth() + 3) ? "soonooc" : undefined)} )
             .attr("y", d => sortedGroupIds.indexOf(d.id)*groupHeight + groupHeight / 2)
             .text(shorten);
 
