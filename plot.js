@@ -86,13 +86,13 @@ requirejs(['w3capi'], function(w3capi) {
     var groups = {};
     var charter = [];
     w3capi.groups().fetch(function(err, data) {
-        var wgs = data.filter(x => x.title.match(/(Working|Interest) Group/));
+        var wgs = data.filter(x => x.title.match(/(Working|Interest) Group$/));
         var notdone = wgs.length;
         wgs.forEach(function(g) {
             const [type, shortname] = [lastOf(g.href.split('/'), 1), lastOf(g.href.split('/'))];
             groups[type + '-' + shortname] = {name: g.title, charters:[], shortname, type, id: type + '-' + shortname};
             return w3capi.group({type, shortname}).charters().fetch({ embed: true }, function(err, charterlist) {
-                (charterlist || []).forEach((c,i) => {
+              (charterlist || []).forEach((c,i) => {
                     var charter = {uri: c.uri, periods : []};
                     charter.periods.push({
                         start: parseDate(c.start),
