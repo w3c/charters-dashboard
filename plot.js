@@ -92,7 +92,7 @@ requirejs(['w3capi'], function(w3capi) {
             const [type, shortname] = [lastOf(g.href.split('/'), 1), lastOf(g.href.split('/'))];
             groups[type + '-' + shortname] = {name: g.title, charters:[], shortname, type, id: type + '-' + shortname};
             return w3capi.group({type, shortname}).charters().fetch({ embed: true }, function(err, charterlist) {
-                charterlist.forEach((c,i) => {
+                (charterlist || []).forEach((c,i) => {
                     var charter = {uri: c.uri, periods : []};
                     charter.periods.push({
                         start: parseDate(c.start),
