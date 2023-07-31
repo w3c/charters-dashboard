@@ -81,8 +81,6 @@ requirejs.config({
 const shorten = g => g.name.replace("Working Group", "WG").replace("Interest Group", "IG");
 
 requirejs(['w3capi'], function(w3capi) {
-    w3capi.apiKey = 'tqdjj949r5cossgggw0ow8ow4kks44c'; // Your API key.
-    w3capi.authMode = 'param';
     var groups = {};
     var charter = [];
     w3capi.groups().fetch(function(err, data) {
